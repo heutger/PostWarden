@@ -26,7 +26,7 @@ jobs:
     name: fmt · clippy · test · audit · build
     runs-on: macos-latest # Apple Silicon
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: dtolnay/rust-toolchain@stable
         with:
