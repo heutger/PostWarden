@@ -1,0 +1,59 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+defaults:
+  run:
+    working-directory: src-tauri
+
+jobs:
+  check:
+    name: fmt · clippy · test · audit · build
+    runs-on: macos-latest # Apple Silicon
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: cargo fmt
+        run: cargo fmt --check
+
+      - name: cargo clippy
+        run: cargo clippy --all-targets --locked -- -D warnings
+
+      - name: cargo test
+        run: cargo test --locked
+
+      - name: Install cargo-audit and tauri-cli
+        run: |
+          cargo install cargo-audit --locked
+          cargo install tauri-cli --version "^2" --locked
+
+      - name: cargo audit
+        run: cargo audit
+
+      # Ad-hoc signed .app only (signingIdentity "-"); signed and notarized
+      # release builds are made locally, see docs/RELEASING.md.
+      - name: cargo tauri build
+        run: cargo tauri build --bundles app
