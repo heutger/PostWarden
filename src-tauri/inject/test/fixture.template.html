@@ -1,0 +1,114 @@
+<!doctype html>
+<!-- SPDX-License-Identifier: AGPL-3.0-only -->
+<!-- Template for make_fixture.py: synthetic Outlook-like DOM, no personal data. -->
+<html><head><meta charset="utf-8"><title>Mail - Outlook</title>
+<script>
+window.__calls=[];
+window.__TAURI_INTERNALS__={invoke:function(cmd,args){window.__calls.push({cmd:cmd,args:JSON.parse(JSON.stringify(args))});
+ if(cmd==='pw_get_config')return Promise.resolve(CFG);return Promise.resolve(null);}};
+var CFG=__CFG__;
+</script>
+<script>__SCRIPT__</script>
+<style>.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}</style>
+</head><body><div id="app"></div><pre id="out"></pre>
+<script>
+function wait(ms){return new Promise(r=>setTimeout(r,ms));}
+const results=[];
+function check(name,cond,detail){results.push((cond?'PASS ':'FAIL ')+name+(cond?'':' -> '+JSON.stringify(detail)));}
+const app=document.getElementById('app');
+const tree=(inner)=>'<div role="navigation"><div role="tree">'+inner+'</div></div>';
+(async()=>{
+ await wait(1500);
+ // 0 not armed yet: a pop-out sharing this script makes no IPC call at all
+ check('no IPC before arm',__calls.length===0,__calls);
+ new Notification('x');
+ check('no notification bridge before arm',!__calls.some(c=>c.cmd==='pw_notify'),__calls);
+ __pw.arm();
+ await wait(300);
+ check('config fetched after arm',__calls.some(c=>c.cmd==='pw_get_config'),__calls);
+ // visibility checks need layout: wait until the viewport has a size
+ for(let i=0;i<100&&!(innerWidth>0);i++) await wait(100);
+ // 1 aria-label count, nested subfolder ignored
+ app.innerHTML=tree('<div role="treeitem" aria-label="Posteingang 3 ungelesen" title="Posteingang"><span>Posteingang</span><span>3</span><div role="group"><div role="treeitem"><span>Sub</span><span>7</span></div></div></div>');
+ let s=__pw.tick(); check('aria count',s.inbox_found&&s.unread===3,s);
+ // 2 digit-only child
+ app.innerHTML=tree('<div role="treeitem"><span>Inbox</span><span>12</span><div role="group"><div role="treeitem"><span>Sub</span><span>5</span></div></div></div>');
+ s=__pw.tick(); check('child count',s.unread===12,s);
+ // 3 zero
+ app.innerHTML=tree('<div role="treeitem"><span>Posteingang</span></div><div role="treeitem"><span>Gesendet</span><span>4</span></div>');
+ s=__pw.tick(); check('zero',s.inbox_found&&s.unread===0,s);
+ // 4 banner from TESTING.md
+ document.body.insertAdjacentHTML('afterbegin','<div id="b" role="alert" style="padding:8px">Bitte melden Sie sich erneut an</div>');
+ s=__pw.tick(); check('banner',!!s.auth_banner,s);
+ document.getElementById('b').remove(); s=__pw.tick(); check('banner removed',!s.auth_banner,s);
+ // 5 screen-reader-only live region is ignored
+ document.body.insertAdjacentHTML('afterbegin','<div id="sr" role="status" class="sr">Please verify your account (mail subject)</div>');
+ s=__pw.tick(); check('sr-only ignored',!s.auth_banner,s); document.getElementById('sr').remove();
+ // 6 banner-like text in message list ignored
+ app.insertAdjacentHTML('beforeend','<div role="listbox"><div role="option"><div role="alert" style="padding:8px">Action required: verify</div></div></div>');
+ s=__pw.tick(); check('listbox excluded',!s.auth_banner,s);
+ // 7 error pages
+ app.innerHTML='<h1>Etwas ist schiefgelaufen</h1>';
+ s=__pw.tick(); check('error page',s.error_page&&!s.inbox_found,s);
+ app.innerHTML='<main role="main"><h1>Something went wrong</h1><p>Try again</p></main>';
+ s=__pw.tick(); check('error page with <main>',s.error_page,s);
+ app.innerHTML='<div role="main"><div role="document"><p>Mail text: something went wrong with my order</p></div></div>';
+ s=__pw.tick(); check('error text in reading pane ignored',!s.error_page,s);
+ app.innerHTML='<div role="main"><h2>Kalender</h2><p>'+'Termin Projektbesprechung '.repeat(80)+'</p><p>Notiz: Keine Verbindung zum Beamer</p></div>';
+ s=__pw.tick(); check('error words on a long page ignored',!s.error_page,s);
+ app.innerHTML=tree('<div role="treeitem" style="display:none"><span>Posteingang</span></div><div role="treeitem"><span>Notizen</span></div>')+'<p>Something went wrong with the order</p>';
+ s=__pw.tick(); check('error words beside folder tree ignored',!s.error_page,s);
+ app.innerHTML='<div role="main"><div role="button" style="padding:8px">Aufgabe: Keine Verbindung zum Beamer</div></div>';
+ s=__pw.tick(); check('error words in short view outside headings ignored',!s.error_page,s);
+ app.innerHTML='<div role="main"><h2>Keine Verbindung zum Beamer</h2><p>Raum 3</p></div>';
+ s=__pw.tick(); check('appointment title in heading is no error page',!s.error_page,s);
+ app.innerHTML='<div style="display:none"><h1>Etwas ist schiefgelaufen</h1></div>';
+ s=__pw.tick(); check('hidden error template ignored',!s.error_page,s);
+ // 8 title is a counter source, never a life sign
+ app.innerHTML=''; document.title='(4) Mail - Outlook';
+ s=__pw.tick(); check('title count without life sign',!s.inbox_found&&s.unread===4,s);
+ app.innerHTML='<h1>Etwas ist schiefgelaufen</h1>';
+ s=__pw.tick(); check('error detected despite title count',s.error_page&&s.unread===4,s);
+ document.title='Mail - Outlook';
+ // 8b hidden (stale) folder tree is no life sign
+ app.innerHTML='<div style="display:none">'+tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span><span>6</span></div>')+'</div>';
+ s=__pw.tick(); check('hidden inbox no life sign',!s.inbox_found&&s.unread===null,s);
+ app.innerHTML='<div style="opacity:0">'+tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span><span>6</span></div>')+'</div>';
+ s=__pw.tick(); check('inbox under transparent parent no life sign',!s.inbox_found,s);
+ // 8c re-auth as modal dialog over a still visible inbox
+ app.innerHTML=tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span><span>1</span></div>')+
+  '<div role="dialog" aria-modal="true" style="padding:8px">Ihre Sitzung ist abgelaufen. Bitte erneut anmelden.</div>';
+ s=__pw.tick(); check('reauth dialog over inbox',s.inbox_found&&!!s.auth_banner,s);
+ app.innerHTML=tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span><span>1</span></div>')+
+  '<div role="dialog" aria-modal="true" style="padding:8px"><div contenteditable="true">Bitte erneut anmelden (Mailentwurf)</div></div>';
+ s=__pw.tick(); check('compose dialog is no banner',!s.auth_banner,s);
+ // 9 notification bridge without content
+ window.__calls.length=0;
+ new Notification('Alice Example',{body:'Secret subject'});
+ const n=__calls.find(c=>c.cmd==='pw_notify');
+ check('notify bridged',!!n&&n.args.kind==='outlook'&&n.args.title===null&&n.args.body===null,n);
+ check('permission granted',Notification.permission==='granted'&&(await Notification.requestPermission())==='granted');
+ // 10 Outlook's real session-expired MessageBar (structure and UI text as captured 2026-11)
+ app.innerHTML=tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span></div>')+
+  '<div role="group" aria-labelledby="t1" class="fui-MessageBar" style="padding:8px"><div class="fui-MessageBar__icon"></div>'+
+  '<div class="fui-MessageBarBody"><span id="t1" class="fui-MessageBarTitle">Sie müssen sich anmelden.</span>Ihre Sitzung ist abgelaufen. '+
+  'Möglicherweise müssen Sie Popups in Ihrem Browser für diese Website aktivieren. Melden Sie sich an, um fortzufahren.</div>'+
+  '<div class="fui-MessageBarActions"><button type="button">Anmelden</button></div></div>';
+ s=__pw.tick(); check('real MessageBar',s.inbox_found&&s.auth_banner==='sie müssen sich anmelden',s);
+ app.innerHTML=tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span></div>')+
+  '<div class="fui-MessageBar" style="padding:8px">SITZUNG ABGELAUFEN</div>';
+ s=__pw.tick(); check('short wording, any case',s.auth_banner==='sitzung (ist )?abgelaufen',s);
+ check('no snapshot API',typeof __pw.snapshot==='undefined');
+ // 11 report only on change
+ window.__calls.length=0; __pw.tick(); __pw.tick();
+ check('dedup reports',__calls.filter(c=>c.cmd==='pw_report').length<=1,__calls.length);
+ // 12 MutationObserver triggers detection
+ window.__calls.length=0;
+ app.innerHTML=tree('<div role="treeitem" title="Posteingang"><span>Posteingang</span><span>9</span></div>');
+ await wait(1500);
+ const r=__calls.filter(c=>c.cmd==='pw_report').pop();
+ check('observer reports',!!r&&r.args.state.unread===9,__calls);
+ document.getElementById('out').textContent=results.join('\n');
+ document.title=results.every(x=>x.startsWith('PASS'))?'ALL PASS':'FAILURES';
+})();
+</script></body></html>

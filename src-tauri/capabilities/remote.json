@@ -1,0 +1,20 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "outlook-remote",
+  "description": "The only IPC access granted to the remote Outlook page: PostWarden's own commands. No core or plugin permissions (fs, shell, opener, http, …).",
+  "windows": ["main"],
+  "remote": {
+    "urls": [
+      "https://outlook.office.com/*",
+      "https://outlook.office365.com/*",
+      "https://outlook.cloud.microsoft/*",
+      "https://outlook.live.com/*"
+    ]
+  },
+  "permissions": [
+    "allow-pw-get-config",
+    "allow-pw-report",
+    "allow-pw-notify",
+    "allow-pw-zoom"
+  ]
+}

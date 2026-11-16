@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pw-report"
+description = "Enables the pw_report command without any pre-configured scope."
+commands.allow = ["pw_report"]
+
+[[permission]]
+identifier = "deny-pw-report"
+description = "Denies the pw_report command without any pre-configured scope."
+commands.deny = ["pw_report"]

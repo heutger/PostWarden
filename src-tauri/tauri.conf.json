@@ -1,0 +1,37 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "PostWarden",
+  "mainBinaryName": "PostWarden",
+  "version": "0.1.0",
+  "identifier": "net.heutger.postwarden",
+  "build": {
+    "frontendDist": "static"
+  },
+  "app": {
+    "windows": [],
+    "withGlobalTauri": false,
+    "security": {
+      "csp": "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+      "capabilities": ["outlook-remote"]
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "public.app-category.productivity",
+    "copyright": "Copyright © 2026 Christian Heutger. Licensed under AGPL-3.0-only.",
+    "shortDescription": "A wrapper for Outlook on the web",
+    "longDescription": "PostWarden shows Outlook on the web in its own window and adds an unread badge, notifications and re-authentication alerts.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.png"
+    ],
+    "macOS": {
+      "minimumSystemVersion": "13.0",
+      "signingIdentity": "-"
+    }
+  }
+}

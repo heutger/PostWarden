@@ -1,0 +1,15 @@
+/src-tauri/target/
+/src-tauri/gen/
+.DS_Store
+*.log
+diagnostics/
+/src-tauri/inject/test/fixture.html
+# review workflow files (local only)
+/CODE_REVIEW.md
+/IMPLEMENTATION_REPORT.md
+
+# local Claude Code settings
+/.claude/
+
+# signed release artifacts (published as GitHub release assets, not in git)
+/release/

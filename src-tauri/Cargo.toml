@@ -1,0 +1,44 @@
+[package]
+name = "postwarden"
+version = "0.1.0"
+description = "A wrapper for Outlook on the web with Dock badge and re-authentication alerts"
+edition = "2021"
+license = "AGPL-3.0-only"
+rust-version = "1.90"
+publish = false
+
+[lib]
+name = "postwarden_lib"
+crate-type = ["rlib"]
+
+[[bin]]
+name = "PostWarden"
+path = "src/main.rs"
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-autostart = "2"
+tauri-plugin-window-state = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+url = "2"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSProcessInfo", "NSString", "NSObject", "NSNotification", "NSOperation", "NSLocale", "NSArray", "NSURL", "NSURLRequest", "NSURLResponse"] }
+objc2-web-kit = { version = "0.3", default-features = false, features = ["std", "objc2-app-kit", "objc2-core-foundation", "WKWebView", "WKNavigationDelegate", "WKNavigationAction", "WKNavigationResponse", "WKFrameInfo", "block2"] }
+block2 = "0.6"
+libc = "0.2"
+
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = "s"
+panic = "abort"
+strip = true

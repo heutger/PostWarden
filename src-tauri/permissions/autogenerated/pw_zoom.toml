@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pw-zoom"
+description = "Enables the pw_zoom command without any pre-configured scope."
+commands.allow = ["pw_zoom"]
+
+[[permission]]
+identifier = "deny-pw-zoom"
+description = "Denies the pw_zoom command without any pre-configured scope."
+commands.deny = ["pw_zoom"]

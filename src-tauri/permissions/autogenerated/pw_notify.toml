@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-pw-notify"
+description = "Enables the pw_notify command without any pre-configured scope."
+commands.allow = ["pw_notify"]
+
+[[permission]]
+identifier = "deny-pw-notify"
+description = "Denies the pw_notify command without any pre-configured scope."
+commands.deny = ["pw_notify"]
